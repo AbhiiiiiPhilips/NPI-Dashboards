@@ -35,23 +35,13 @@
 
   <div class="stage">
     <div class="slides">
-      <!-- First slide loads immediately; others lazy-load on first show -->
       <div class="slide active">
         <iframe src="https://app.smartsheet.eu/b/publish?EQBCT=b22923d86abe45e99b9ed2abea242eec"
                 loading="eager" referrerpolicy="no-referrer"></iframe>
       </div>
-      <div class="slide">
-        <iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=4de851d39dc848c8b319e5678b8c9c0a"
-                loading="lazy" referrerpolicy="no-referrer"></iframe>
-      </div>
-      <div class="slide">
-        <iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=f774be235fb04630b40f3f344b32b40a"
-                loading="lazy" referrerpolicy="no-referrer"></iframe>
-      </div>
-      <div class="slide">
-        <iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=b3905dbea4f649c197da14c84b3bc34c"
-                loading="lazy" referrerpolicy="no-referrer"></iframe>
-      </div>
+      <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=4de851d39dc848c8b319e5678b8c9c0a" loading="lazy" referrerpolicy="no-referrer"></iframe></div>
+      <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=f774be235fb04630b40f3f344b32b40a" loading="lazy" referrerpolicy="no-referrer"></iframe></div>
+      <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=b3905dbea4f649c197da14c84b3bc34c" loading="lazy" referrerpolicy="no-referrer"></iframe></div>
     </div>
   </div>
 
@@ -73,13 +63,13 @@
     function render(){
       slides.forEach((s,idx)=>s.classList.toggle('active', idx===i));
       count.textContent = `${i+1} / ${slides.length}`;
-      ensureLoaded(i);                                        // load current
-      setTimeout(()=>ensureLoaded((i+1)%slides.length), 250); // soft-prefetch next
+      ensureLoaded(i);
+      setTimeout(()=>ensureLoaded((i+1)%slides.length), 250);
       sessionStorage.setItem('blazeIndex', i);
     }
     document.getElementById('next').onclick = ()=>{ i=(i+1)%slides.length; render(); };
     document.getElementById('prev').onclick = ()=>{ i=(i-1+slides.length)%slides.length; render(); };
-    // start at persisted slide
+
     render();
   </script>
 </body>
