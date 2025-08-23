@@ -3,10 +3,8 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title></title>
-
   <link rel="dns-prefetch" href="//app.smartsheet.eu">
   <link rel="preconnect" href="https://app.smartsheet.eu" crossorigin>
-
   <style>
     :root{--bar:#0b2b4f;--text:#fff;--btn:#003366;--btnH:#0059b3}
     html,body{margin:0;height:100%;overflow:hidden}
@@ -15,8 +13,15 @@
     .spacer{margin-left:auto}
     .stage{position:absolute;inset:56px 0 0 0}
     .slides{position:absolute;inset:0}
-    .slide{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .18s}
-    .slide.active{opacity:1;pointer-events:auto}
+    .slide{
+      position:absolute; inset:0;
+      transform:translateX(-200vw);
+      will-change: transform;
+      pointer-events:none;
+      transition:transform .12s linear;
+      z-index:1;
+    }
+    .slide.active{ transform:none; pointer-events:auto; z-index:2; }
     iframe{width:100%;height:100%;border:0;background:#fff}
     .controls{position:fixed;left:0;right:0;bottom:18px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;z-index:11}
     .btn{border:0;border-radius:10px;padding:12px 18px;font-size:16px;font-weight:700;background:var(--btn);color:#fff;cursor:pointer}
@@ -58,10 +63,10 @@
       if(ifr && !ifr.src && ifr.dataset.src) ifr.src = ifr.dataset.src;
     }
     function render(){
-      slides.forEach((s,idx)=>s.classList.toggle('active', idx===i));
+      slides.forEach((s,idx)=> s.classList.toggle('active', idx===i));
       count.textContent = `${i+1} / ${slides.length}`;
       ensureLoaded(i);
-      setTimeout(()=>ensureLoaded((i+1)%slides.length), 250);
+      setTimeout(()=> ensureLoaded((i+1)%slides.length), 200);
       sessionStorage.setItem('vm13Index', i);
     }
     document.getElementById('next').onclick = ()=>{ i=(i+1)%slides.length; render(); };
