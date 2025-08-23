@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title></title>
+  <style>
+    :root{--bar:#0b2b4f;--text:#fff}
+    html,body{margin:0;height:100%;overflow:hidden}
+    .top{position:fixed;inset:0 0 auto 0;height:56px;display:flex;gap:10px;align-items:center;padding:0 14px;background:var(--bar);color:var(--text);z-index:10}
+    .btn{display:inline-block;border:0;border-radius:12px;padding:8px 14px;font-weight:700;color:#fff;background:#104071;text-decoration:none}
+    .stage{position:absolute;inset:56px 0 0 0}
+    iframe{width:100%;height:100%;border:0;background:#fff;touch-action:pan-x pan-y}
+    .spacer{margin-left:auto}
+  </style>
+</head>
+<body>
+  <div class="top">
+    <a class="btn" href="./index.html">Home</a>
+    <a class="btn" href="./VM13.0.html">VM13.0</a>
+    <a class="btn" href="./Blaze1.0.html">Blaze1.0</a>
+    <div class="spacer"></div>
+  </div>
+  <div class="stage">
+    <iframe src="https://app.smartsheet.eu/b/publish?EQBCT=d75deb97e5c544d98de6b1b5c4c6f2b6" allow="fullscreen" loading="eager"></iframe>
+  </div>
+</body>
+</html>
