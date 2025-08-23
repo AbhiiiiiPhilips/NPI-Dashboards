@@ -3,18 +3,34 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title></title>
+  <link rel="dns-prefetch" href="//app.smartsheet.eu">
+  <link rel="preconnect" href="https://app.smartsheet.eu" crossorigin>
   <style>
     :root{--bar:#0b2b4f;--text:#fff;--btn:#003366;--btnH:#0059b3}
     html,body{margin:0;height:100%;overflow:hidden}
     .top{position:fixed;inset:0 0 auto 0;height:56px;display:flex;gap:10px;align-items:center;padding:0 14px;background:var(--bar);color:var(--text);z-index:10}
     .btnL{display:inline-block;border:0;border-radius:12px;padding:8px 14px;font-weight:700;color:#fff;background:#104071;text-decoration:none}
+    .spacer{margin-left:auto}
     .stage{position:absolute;inset:56px 0 0 0}
-    iframe{width:100%;height:100%;border:0;background:#fff;touch-action:pan-x pan-y}
+    .slides{position:absolute;inset:0}
+    .slide{
+      position:absolute; inset:0;
+      transform:translateX(-200vw);          /* keep rendered but off-canvas */
+      will-change: transform;
+      pointer-events:none;                    /* ignore clicks when inactive */
+      transition:transform .12s linear;       /* tiny snap */
+      z-index:1;
+    }
+    .slide.active{
+      transform:none;                         /* back into view */
+      pointer-events:auto;
+      z-index:2;                              /* on top of others */
+    }
+    iframe{width:100%;height:100%;border:0;background:#fff}
     .controls{position:fixed;left:0;right:0;bottom:18px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;z-index:11}
     .btn{border:0;border-radius:10px;padding:12px 18px;font-size:16px;font-weight:700;background:var(--btn);color:#fff;cursor:pointer}
     .btn:hover{background:var(--btnH)}
     .counter{color:#fff;background:rgba(0,0,0,.35);padding:8px 12px;border-radius:10px;font-weight:700}
-    .spacer{margin-left:auto}
   </style>
 </head>
 <body>
@@ -24,34 +40,50 @@
     <a class="btnL" href="./Blaze1.0.html">Blaze1.0</a>
     <div class="spacer"></div>
   </div>
+
   <div class="stage">
-    <iframe id="frame" allow="fullscreen" tabindex="0"></iframe>
+    <div class="slides">
+      <div class="slide active">
+        <iframe src="https://app.smartsheet.eu/b/publish?EQBCT=b22923d86abe45e99b9ed2abea242eec" loading="eager" referrerpolicy="no-referrer"></iframe>
+      </div>
+      <div class="slide">
+        <iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=4de851d39dc848c8b319e5678b8c9c0a" loading="lazy" referrerpolicy="no-referrer"></iframe>
+      </div>
+      <div class="slide">
+        <iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=f774be235fb04630b40f3f344b32b40a" loading="lazy" referrerpolicy="no-referrer"></iframe>
+      </div>
+      <div class="slide">
+        <iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=b3905dbea4f649c197da14c84b3bc34c" loading="lazy" referrerpolicy="no-referrer"></iframe>
+      </div>
+    </div>
   </div>
+
   <div class="controls">
     <button class="btn" id="prev">Previous</button>
-    <div class="counter" id="count"></div>
+    <div class="counter" id="count">1 / 4</div>
     <button class="btn" id="next">Next</button>
   </div>
+
   <script>
-    const urls = [
-      "https://app.smartsheet.eu/b/publish?EQBCT=b22923d86abe45e99b9ed2abea242eec",
-      "https://app.smartsheet.eu/b/publish?EQBCT=4de851d39dc848c8b319e5678b8c9c0a",
-      "https://app.smartsheet.eu/b/publish?EQBCT=f774be235fb04630b40f3f344b32b40a",
-      "https://app.smartsheet.eu/b/publish?EQBCT=b3905dbea4f649c197da14c84b3bc34c"
-    ];
-    const frame = document.getElementById('frame');
-    const count = document.getElementById('count');
-    let i = Number(sessionStorage.getItem('blazeIndex')||0) % urls.length;
-    function set(n){
-      i = (n + urls.length) % urls.length;
-      frame.src = urls[i];
-      count.textContent = `${i+1} / ${urls.length}`;
-      frame.focus();
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const count  = document.getElementById('count');
+    let i = Number(sessionStorage.getItem('blazeIndex')||0) % slides.length;
+
+    function ensureLoaded(idx){
+      const ifr = slides[idx].querySelector('iframe');
+      if(ifr && !ifr.src && ifr.dataset.src) ifr.src = ifr.dataset.src;
+    }
+    function render(){
+      slides.forEach((s,idx)=> s.classList.toggle('active', idx===i));
+      count.textContent = `${i+1} / ${slides.length}`;
+      ensureLoaded(i);
+      setTimeout(()=> ensureLoaded((i+1)%slides.length), 200);  // prefetch next
       sessionStorage.setItem('blazeIndex', i);
     }
-    document.getElementById('next').onclick = ()=>set(i+1);
-    document.getElementById('prev').onclick = ()=>set(i-1);
-    set(i);
+    document.getElementById('next').onclick = ()=>{ i=(i+1)%slides.length; render(); };
+    document.getElementById('prev').onclick = ()=>{ i=(i-1+slides.length)%slides.length; render(); };
+
+    render();
   </script>
 </body>
 </html>
