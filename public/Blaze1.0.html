@@ -79,12 +79,7 @@
     }
     document.getElementById('next').onclick = ()=>{ i=(i+1)%slides.length; render(); };
     document.getElementById('prev').onclick = ()=>{ i=(i-1+slides.length)%slides.length; render(); };
-    window.addEventListener('keydown',e=>{
-      if(e.key==='ArrowRight') document.getElementById('next').click();
-      if(e.key==='ArrowLeft')  document.getElementById('prev').click();
-      if(e.key==='1') location.href='./index.html';
-      if(e.key==='2') location.href='./VM13.0.html';
-    });
+
 
     // start at persisted slide
     render();
