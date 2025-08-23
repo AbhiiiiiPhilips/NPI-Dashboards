@@ -3,8 +3,10 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title></title>
+  <!-- warm up Smartsheet -->
   <link rel="dns-prefetch" href="//app.smartsheet.eu">
   <link rel="preconnect" href="https://app.smartsheet.eu" crossorigin>
+
   <style>
     :root{--bar:#0b2b4f;--text:#fff;--btn:#003366;--btnH:#0059b3}
     html,body{margin:0;height:100%;overflow:hidden}
@@ -13,19 +15,8 @@
     .spacer{margin-left:auto}
     .stage{position:absolute;inset:56px 0 0 0}
     .slides{position:absolute;inset:0}
-    .slide{
-      position:absolute; inset:0;
-      transform:translateX(-200vw);          /* keep rendered but off-canvas */
-      will-change: transform;
-      pointer-events:none;                    /* ignore clicks when inactive */
-      transition:transform .12s linear;       /* tiny snap */
-      z-index:1;
-    }
-    .slide.active{
-      transform:none;                         /* back into view */
-      pointer-events:auto;
-      z-index:2;                              /* on top of others */
-    }
+    .slide{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .18s}
+    .slide.active{opacity:1;pointer-events:auto}
     iframe{width:100%;height:100%;border:0;background:#fff}
     .controls{position:fixed;left:0;right:0;bottom:18px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;z-index:11}
     .btn{border:0;border-radius:10px;padding:12px 18px;font-size:16px;font-weight:700;background:var(--btn);color:#fff;cursor:pointer}
@@ -36,13 +27,14 @@
 <body>
   <div class="top">
     <a class="btnL" href="./index.html">Home</a>
-    <a class="btnL" href="./VM13.0.html">VM13.0</a>
-    <a class="btnL" href="./Blaze1.0.html">Blaze1.0</a>
+    <a class="btnL" href="./vm13.html">VM13.0</a>
+    <a class="btnL" href="./blaze.html">Blaze1.0</a>
     <div class="spacer"></div>
   </div>
 
   <div class="stage">
-    <div class="slides">
+    <div class="slides" id="slides">
+      <!-- First loads immediately; others lazy on first show -->
       <div class="slide active">
         <iframe src="https://app.smartsheet.eu/b/publish?EQBCT=b22923d86abe45e99b9ed2abea242eec" loading="eager" referrerpolicy="no-referrer"></iframe>
       </div>
@@ -71,18 +63,26 @@
 
     function ensureLoaded(idx){
       const ifr = slides[idx].querySelector('iframe');
-      if(ifr && !ifr.src && ifr.dataset.src) ifr.src = ifr.dataset.src;
+      if(ifr && !ifr.src && ifr.dataset.src){ ifr.src = ifr.dataset.src; }
     }
     function render(){
       slides.forEach((s,idx)=> s.classList.toggle('active', idx===i));
       count.textContent = `${i+1} / ${slides.length}`;
-      ensureLoaded(i);
-      setTimeout(()=> ensureLoaded((i+1)%slides.length), 200);  // prefetch next
+      ensureLoaded(i);                 // load current
+      setTimeout(()=>ensureLoaded((i+1)%slides.length), 250); // softly preload next
       sessionStorage.setItem('blazeIndex', i);
     }
-    document.getElementById('next').onclick = ()=>{ i=(i+1)%slides.length; render(); };
-    document.getElementById('prev').onclick = ()=>{ i=(i-1+slides.length)%slides.length; render(); };
+    document.getElementById('next').onclick = ()=>{ i = (i+1)%slides.length; render(); };
+    document.getElementById('prev').onclick = ()=>{ i = (i-1+slides.length)%slides.length; render(); };
+    window.addEventListener('keydown',e=>{
+      if(e.key==='ArrowRight') document.getElementById('next').click();
+      if(e.key==='ArrowLeft')  document.getElementById('prev').click();
+      if(e.key==='1') location.href='./index.html';
+      if(e.key==='2') location.href='./vm13.html';
+    });
 
+    // initial
+    slides.forEach((s,idx)=>{ if(idx!==i){ /* keep hidden; will lazy-load */ } });
     render();
   </script>
 </body>
