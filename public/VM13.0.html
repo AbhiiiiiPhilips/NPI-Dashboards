@@ -4,6 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title></title>
 
+  <!-- Warm up Smartsheet -->
   <link rel="dns-prefetch" href="//app.smartsheet.eu">
   <link rel="preconnect" href="https://app.smartsheet.eu" crossorigin>
 
@@ -36,23 +37,23 @@
     <div class="slides">
       <div class="slide active">
         <iframe src="https://app.smartsheet.eu/b/publish?EQBCT=3b520afbf1da4f90a727c17fe95907f8"
-                loading="eager" referrerpolicy="no-referrer"></iframe>
+                referrerpolicy="no-referrer"></iframe>
       </div>
       <div class="slide">
         <iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=01347ff55a724070a834146d3d87a0f6"
-                loading="lazy" referrerpolicy="no-referrer"></iframe>
+                referrerpolicy="no-referrer"></iframe>
       </div>
       <div class="slide">
         <iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=fef1863840294332a6b492bb15e9449d"
-                loading="eager" referrerpolicy="no-referrer"></iframe>
+                referrerpolicy="no-referrer"></iframe>
       </div>
       <div class="slide">
         <iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=6d451758e57f4b5d960c35f1b4699c6b"
-                loading="lazy" referrerpolicy="no-referrer"></iframe>
+                referrerpolicy="no-referrer"></iframe>
       </div>
       <div class="slide">
         <iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=4af1d8a89b7d48a7ae3a28115bda420e"
-                loading="eager" referrerpolicy="no-referrer"></iframe>
+                referrerpolicy="no-referrer"></iframe>
       </div>
     </div>
   </div>
@@ -66,22 +67,32 @@
   <script>
     const slides = Array.from(document.querySelectorAll('.slide'));
     const count  = document.getElementById('count');
-    let i = Number(sessionStorage.getItem('vm13Index')||0) % slides.length;
+    let i = Number(sessionStorage.getItem('vm13Index') || 0) % slides.length;
+
+    const norm = idx => (idx + slides.length) % slides.length;
 
     function ensureLoaded(idx){
-      const ifr = slides[idx].querySelector('iframe');
-      if(ifr && !ifr.src && ifr.dataset.src) ifr.src = ifr.dataset.src;
+      const s = slides[norm(idx)];
+      const ifr = s.querySelector('iframe');
+      if (ifr && !ifr.src && ifr.dataset.src) {
+        ifr.src = ifr.dataset.src; // start loading now
+      }
     }
+
     function render(){
-      slides.forEach((s,idx)=>s.classList.toggle('active', idx===i));
+      slides.forEach((s,idx)=> s.classList.toggle('active', idx === i));
       count.textContent = `${i+1} / ${slides.length}`;
+
+      // Balanced prefetch: current, next, previous
       ensureLoaded(i);
-      setTimeout(()=>ensureLoaded((i+1)%slides.length), 250);
+      ensureLoaded(i+1);
+      ensureLoaded(i-1);
+
       sessionStorage.setItem('vm13Index', i);
     }
-    document.getElementById('next').onclick = ()=>{ i=(i+1)%slides.length; render(); };
-    document.getElementById('prev').onclick = ()=>{ i=(i-1+slides.length)%slides.length; render(); };
-    
+
+    document.getElementById('next').onclick = () => { i = norm(i+1); render(); };
+    document.getElementById('prev').onclick = () => { i = norm(i-1); render(); };
 
     render();
   </script>
