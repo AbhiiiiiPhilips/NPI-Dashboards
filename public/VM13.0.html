@@ -2,59 +2,54 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title></title>
+  <title>VM13.0</title>
 
+  <!-- Help the browser connect sooner to Smartsheet -->
   <link rel="dns-prefetch" href="//app.smartsheet.eu">
   <link rel="preconnect" href="https://app.smartsheet.eu" crossorigin>
 
   <style>
-    :root{--bar:#0b2b4f;--text:#fff;--btn:#003366;--btnH:#0059b3}
+    :root{--bar:#0b2b4f;--text:#fff;--btn:#003366;--btnH:#0059b3;--btnDisabled:#6b7b8c}
     html,body{margin:0;height:100%;overflow:hidden}
     .top{position:fixed;inset:0 0 auto 0;height:56px;display:flex;gap:10px;align-items:center;padding:0 14px;background:var(--bar);color:var(--text);z-index:10}
     .btnL{display:inline-block;border:0;border-radius:12px;padding:8px 14px;font-weight:700;color:#fff;background:#104071;text-decoration:none}
+    .btnL:visited{color:#fff}
     .spacer{margin-left:auto}
     .stage{position:absolute;inset:56px 0 0 0}
+
     .slides{position:absolute;inset:0}
     .slide{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .18s}
     .slide.active{opacity:1;pointer-events:auto}
-    iframe{width:100%;height:100%;border:0;background:#fff}
+
+    iframe{width:100%;height:100%;border:0;background:#fff;touch-action:pan-x pan-y}
+
     .controls{position:fixed;left:0;right:0;bottom:18px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;z-index:11}
     .btn{border:0;border-radius:10px;padding:12px 18px;font-size:16px;font-weight:700;background:var(--btn);color:#fff;cursor:pointer}
     .btn:hover{background:var(--btnH)}
+    .btn[disabled]{background:var(--btnDisabled);cursor:not-allowed;opacity:.75}
     .counter{color:#fff;background:rgba(0,0,0,.35);padding:8px 12px;border-radius:10px;font-weight:700}
   </style>
 </head>
 <body>
   <div class="top">
     <a class="btnL" href="./index.html">Home</a>
-    <a class="btnL" href="./VM13.0.html">VM 13.0</a>
+    <a class="btnL" href="./VM13.0.html">VM13.0</a>
     <a class="btnL" href="./Blaze1.0.html">Blaze 1.0</a>
-    <a class="btnL" href="./VM14.0.html">VM 14.0</a>
     <div class="spacer"></div>
   </div>
 
   <div class="stage">
-    <div class="slides">
+    <div class="slides" id="deck">
+      <!-- 1: first slide loads immediately -->
       <div class="slide active">
         <iframe src="https://app.smartsheet.eu/b/publish?EQBCT=3b520afbf1da4f90a727c17fe95907f8"
                 loading="eager" referrerpolicy="no-referrer"></iframe>
       </div>
-      <div class="slide">
-        <iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=01347ff55a724070a834146d3d87a0f6"
-                loading="lazy" referrerpolicy="no-referrer"></iframe>
-      </div>
-      <div class="slide">
-        <iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=fef1863840294332a6b492bb15e9449d"
-                loading="eager" referrerpolicy="no-referrer"></iframe>
-      </div>
-      <div class="slide">
-        <iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=6d451758e57f4b5d960c35f1b4699c6b"
-                loading="lazy" referrerpolicy="no-referrer"></iframe>
-      </div>
-      <div class="slide">
-        <iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=4af1d8a89b7d48a7ae3a28115bda420e"
-                loading="eager" referrerpolicy="no-referrer"></iframe>
-      </div>
+      <!-- rest use data-src, we’ll preload all of them programmatically -->
+      <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=01347ff55a724070a834146d3d87a0f6" loading="lazy" referrerpolicy="no-referrer"></iframe></div>
+      <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=fef1863840294332a6b492bb15e9449d" loading="lazy" referrerpolicy="no-referrer"></iframe></div>
+      <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=6d451758e57f4b5d960c35f1b4699c6b" loading="lazy" referrerpolicy="no-referrer"></iframe></div>
+      <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=4af1d8a89b7d48a7ae3a28115bda420e" loading="lazy" referrerpolicy="no-referrer"></iframe></div>
     </div>
   </div>
 
@@ -65,26 +60,55 @@
   </div>
 
   <script>
+    // --- config/state
     const slides = Array.from(document.querySelectorAll('.slide'));
     const count  = document.getElementById('count');
-    let i = Number(sessionStorage.getItem('vm13Index')||0) % slides.length;
+    const btnPrev = document.getElementById('prev');
+    const btnNext = document.getElementById('next');
 
-    function ensureLoaded(idx){
-      const ifr = slides[idx].querySelector('iframe');
-      if(ifr && !ifr.src && ifr.dataset.src) ifr.src = ifr.dataset.src;
+    // persist index per project page
+    let i = Number(sessionStorage.getItem('vm13Index')||0);
+    if (i < 0 || i >= slides.length) i = 0;
+
+    // guard so we preload only once per browser session
+    const PRELOAD_KEY = 'vm13Preloaded';
+
+    function setDisabledStates() {
+      btnPrev.disabled = (i === 0);
+      btnNext.disabled = (i === slides.length - 1);
     }
-    function render(){
-      slides.forEach((s,idx)=>s.classList.toggle('active', idx===i));
+
+    function show(idx){
+      i = idx;
+      slides.forEach((s, k) => s.classList.toggle('active', k === i));
       count.textContent = `${i+1} / ${slides.length}`;
-      ensureLoaded(i);
-      setTimeout(()=>ensureLoaded((i+1)%slides.length), 250);
+      setDisabledStates();
       sessionStorage.setItem('vm13Index', i);
     }
-    document.getElementById('next').onclick = ()=>{ i=(i+1)%slides.length; render(); };
-    document.getElementById('prev').onclick = ()=>{ i=(i-1+slides.length)%slides.length; render(); };
-    
 
-    render();
+    // Preload ALL iframes (after first paint), with a small stagger
+    function preloadAllOnce(){
+      if (sessionStorage.getItem(PRELOAD_KEY)) return;
+      const iframes = slides.map(s => s.querySelector('iframe'));
+      let delay = 150; // ms between each start to avoid a single spike
+      iframes.forEach((ifr, idx) => {
+        if (!ifr.src && ifr.dataset.src) {
+          setTimeout(() => { ifr.src = ifr.dataset.src; }, delay * (idx+1));
+        }
+      });
+      sessionStorage.setItem(PRELOAD_KEY, '1');
+    }
+
+    // wire buttons
+    btnNext.onclick = () => { if (i < slides.length - 1) show(i+1); };
+    btnPrev.onclick = () => { if (i > 0) show(i-1); };
+
+    // initial render (jump to saved index)
+    show(i);
+
+    // kick off preloading as soon as the page settles
+    // (use requestIdleCallback if available)
+    (window.requestIdleCallback || setTimeout)(preloadAllOnce, 300);
   </script>
 </body>
 </html>
