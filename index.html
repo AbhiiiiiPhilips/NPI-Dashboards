@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NPI Dashboards</title>
+  <style>
+    :root{--philips:#0e5fd8;--bar:#0b2b4f;--btn:#003366;--btnH:#0059b3;--btnDis:#7a94b8}
+
+    html,body{margin:0;height:100%;overflow:hidden;background:#fff;font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;}
+
+    /* Veil */
+    .veil{position:fixed;inset:0;background:#fff;opacity:1;transition:opacity .6s ease;pointer-events:none;z-index:9998;}
+    .veil.hidden{opacity:0}
+
+    /* Splash */
+    .splash{position:fixed;inset:0;background:var(--philips);z-index:9999;color:#fff}
+    .splash-fit{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center}
+    .splash-inner{display:flex;flex-direction:column;align-items:center;gap:14px}
+    .splash-logo{font-weight:900;letter-spacing:.04em;font-size:clamp(66px,14vw,180px);line-height:1.02;white-space:nowrap;
+      opacity:0;transform:translateY(14px);
+      animation:logoIn .5s ease-out .2s forwards,logoOut .5s ease-in 2.0s forwards;}
+    .splash-tag{display:flex;align-items:center;font-size:clamp(28px,3vw,46px);font-weight:700;gap:.35ch;
+      opacity:0;transform:translateX(64px);
+      animation:tagSlide .8s ease-out .9s forwards,tagFade .5s ease-in 2.0s forwards;}
+  /* Center loading as a single straight line where the logo was */
+  .loading{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;font-weight:800;font-size:clamp(20px,3.6vw,36px);opacity:0;text-align:center;pointer-events:none;white-space:nowrap}
+  .loading .dots{display:inline-flex;gap:.28ch;margin-left:.5ch;font-size:0.9em}
+  .loading .dots span{opacity:.25;display:inline-block;animation:dotPulse 1s infinite ease-in-out}
+  .loading .dots span:nth-child(1){animation-delay:0s}
+  .loading .dots span:nth-child(2){animation-delay:.15s}
+  .loading .dots span:nth-child(3){animation-delay:.3s}
+  @keyframes dotPulse{0%,100%{opacity:.25}50%{opacity:1}}
+  /* Appear after logo/tag have moved out (CSS delay so it shows even before window.load) */
+  .loading{animation:loadingIn .42s cubic-bezier(.22,.9,.35,1) 2.5s forwards}
+  @keyframes loadingIn{from{opacity:0;transform:translate(-50%,-55%)}to{opacity:1;transform:translate(-50%,-50%)}}
+  @media (max-width:420px){
+    .loading{font-size:clamp(18px,5.5vw,28px)}
+  }
+    .sparkles{position:relative;width:1.25em;height:1.25em;display:inline-block;margin:0 .08em}
+    .sparkles svg{position:absolute;inset:0;width:100%;height:100%;fill:#fff}
+    .sparkles .back{opacity:.45;transform:translate(.18em,-.14em) scale(.78)}
+    .sparkles .front{opacity:1}
+    .splash.fade-out{animation:fadeSplash .8s ease-in forwards}
+
+    @keyframes logoIn{to{opacity:1;transform:translateY(0)}}
+    @keyframes logoOut{to{opacity:0;transform:translateY(-20px)}}
+    @keyframes tagSlide{to{opacity:1;transform:translateX(0)}}
+    @keyframes tagFade{to{opacity:0;transform:translateX(-20px)}}
+    @keyframes fadeSplash{to{opacity:0;visibility:hidden}}
+
+    /* Top bar */
+    .top{position:fixed;inset:0 0 auto 0;height:56px;display:flex;gap:10px;align-items:center;padding:0 14px;
+      background:var(--bar);color:#fff;z-index:100;opacity:0;transition:opacity 1s ease}
+    .btn{display:inline-block;border:0;border-radius:12px;padding:8px 14px;font-weight:700;color:#fff;background:#104071;text-decoration:none}
+    /* Haptic-like press feedback */
+    .btn{transition:transform .12s ease, box-shadow .12s ease, background-color .12s ease}
+    .btn:active{transform:translateY(1px) scale(.995); box-shadow:inset 0 2px 6px rgba(0,0,0,.25); background:var(--btnH)}
+    .top a.btn:hover{background:var(--btnH)}
+    /* Selected / current route */
+    .top a.btn.selected{background:#fff;color:var(--bar);box-shadow:0 6px 20px rgba(0,0,0,.18)}
+
+    /* Stage */
+    .stage{position:absolute;inset:56px 0 0 0;opacity:0;transition:opacity 1.2s ease}
+    iframe{width:100%;height:100%;border:0;background:#fff}
+
+    /* Project containers */
+    .project{position:absolute;inset:0;transition:opacity .3s ease}
+    .project.inactive{opacity:0;z-index:0;pointer-events:none}
+    .project.active{opacity:1;z-index:1;pointer-events:auto}
+
+    /* Slider */
+    .slides{position:absolute;inset:0}
+    .slide{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .18s ease}
+    .slide.active{opacity:1;pointer-events:auto}
+    .controls{position:absolute;left:0;right:0;bottom:18px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;z-index:30}
+    .controls .btn{padding:10px 16px;font-size:14px;background:var(--btn)}
+    .controls .btn:hover{background:var(--btnH)}
+    .controls .btn[disabled]{background:var(--btnDis);cursor:not-allowed;opacity:.65}
+    .counter{color:#fff;background:rgba(0,0,0,.35);padding:6px 10px;border-radius:8px;font-weight:700}
+  </style>
+</head>
+<body>
+  <!-- SPLASH -->
+  <div id="splash" class="splash">
+    <div class="splash-fit">
+      <div class="splash-inner">
+        <div class="splash-logo">PHILIPS</div>
+        <div class="splash-tag">
+          <span>innovation</span>
+          <span class="sparkles">
+            <svg class="back" viewBox="0 0 24 24"><path d="M12 2l1.8 5.4L19 9.5l-5.2 1.7L12 16l-1.8-4.8L5 9.5l5.2-2.1L12 2z"/></svg>
+            <svg class="front" viewBox="0 0 24 24"><path d="M12 2l1.8 5.4L19 9.5l-5.2 1.7L12 16l-1.8-4.8L5 9.5l5.2-2.1L12 2z"/></svg>
+          </span>
+          <span>you</span>
+        </div>
+        <div id="splash-loading" class="loading" aria-hidden="true">
+          <span>Loading NPI Dashboards</span>
+          <span class="dots"><span>.</span><span>.</span><span>.</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="veil" id="veil"></div>
+
+  <!-- NAVIGATION -->
+  <div class="top" id="topbar">
+    <a class="btn" href="#home" data-route="home">Home</a>
+    <a class="btn" href="#vm13" data-route="vm13">VM 13.0</a>
+    <a class="btn" href="#blaze" data-route="blaze">Blaze 1.0</a>
+    <a class="btn" href="#vm14" data-route="vm14">VM 14.0</a>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- DASHBOARDS -->
+  <div class="stage" id="stage">
+    <!-- HOME -->
+    <div id="view-home" class="project active">
+      <iframe src="https://app.smartsheet.eu/b/publish?EQBCT=d75deb97e5c544d98de6b1b5c4c6f2b6" loading="eager" fetchpriority="high"></iframe>
+    </div>
+
+    <!-- VM13 -->
+    <div id="view-vm13" class="project inactive">
+      <div class="slides">
+        <div class="slide active"><iframe src="https://app.smartsheet.eu/b/publish?EQBCT=3b520afbf1da4f90a727c17fe95907f8" loading="eager" fetchpriority="high"></iframe></div>
+        <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=01347ff55a724070a834146d3d87a0f6"></iframe></div>
+        <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=fef1863840294332a6b492bb15e9449d"></iframe></div>
+        <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=6d451758e57f4b5d960c35f1b4699c6b"></iframe></div>
+        <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=4af1d8a89b7d48a7ae3a28115bda420e"></iframe></div>
+      </div>
+      <div class="controls"><button class="btn prev">⟨ Prev</button><div class="counter">1 / 5</div><button class="btn next">Next ⟩</button></div>
+    </div>
+
+    <!-- Blaze -->
+    <div id="view-blaze" class="project inactive">
+      <div class="slides">
+        <div class="slide active"><iframe src="https://app.smartsheet.eu/b/publish?EQBCT=b22923d86abe45e99b9ed2abea242eec" loading="eager" fetchpriority="high"></iframe></div>
+        <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=4de851d39dc848c8b319e5678b8c9c0a"></iframe></div>
+        <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=f774be235fb04630b40f3f344b32b40a"></iframe></div>
+        <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=b3905dbea4f649c197da14c84b3bc34c"></iframe></div>
+      </div>
+      <div class="controls"><button class="btn prev">⟨ Prev</button><div class="counter">1 / 4</div><button class="btn next">Next ⟩</button></div>
+    </div>
+
+    <!-- VM14 -->
+    <div id="view-vm14" class="project inactive">
+      <div class="slides">
+        <div class="slide active"><iframe src="https://app.smartsheet.eu/b/publish?EQBCT=a2759a020f6e45a3a6dc3fea089b2bd4" loading="eager" fetchpriority="high"></iframe></div>
+        <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=28c0f9d1fa8541858e7054f76798a6d3"></iframe></div>
+        <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=6fca486dbfc842c7afac7cb0ced8337e"></iframe></div>
+        <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=9415a9327886401ba0d2885d3f8c9cc1"></iframe></div>
+        <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=ce6e7d063b1648d6858744777f5ea68c"></iframe></div>
+        <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=dbc388d3830a4e5c982d5fe412dfeeac"></iframe></div>
+        <div class="slide"><iframe data-src="https://app.smartsheet.eu/b/publish?EQBCT=627bfbe702fa4b97a5d110af100445c3"></iframe></div>
+      </div>
+      <div class="controls"><button class="btn prev">⟨ Prev</button><div class="counter">1 / 7</div><button class="btn next">Next ⟩</button></div>
+    </div>
+  </div>
+
+  <script>
+    const ROUTES=['home','vm13','blaze','vm14'];
+    const CONTAINERS={
+      home:document.getElementById('view-home'),
+      vm13:document.getElementById('view-vm13'),
+      blaze:document.getElementById('view-blaze'),
+      vm14:document.getElementById('view-vm14'),
+    };
+
+    function show(route){
+      ROUTES.forEach(r=>{
+        const el=CONTAINERS[r];if(!el)return;
+        if(r===route){el.classList.add('active');el.classList.remove('inactive');}
+        else{el.classList.remove('active');el.classList.add('inactive');}
+      });
+      if(location.hash.replace('#','')!==route)location.hash=route;
+    }
+
+    function roundRobinPreload(){
+      const projects = document.querySelectorAll('.project');
+      const slidesByProject = Array.from(projects).map(project =>
+        Array.from(project.querySelectorAll('.slide')).slice(1) // skip first
+      );
+
+  // respect data-saver preferences
+  if(navigator.connection && navigator.connection.saveData) return;
+
+  const tasks = [];
+  const lengths = slidesByProject.map(slides => slides.length);
+  let maxLen = lengths.length ? Math.max(...lengths) : 0;
+
+      for (let i = 0; i < maxLen; i++) {
+        slidesByProject.forEach(slides => {
+          if (slides[i]) {
+            const iframe = slides[i].querySelector("iframe");
+            if (iframe && iframe.dataset.src) tasks.push(iframe);
+          }
+        });
+      }
+
+      let idx = 0;
+      function loadNext(){
+        if (idx >= tasks.length) return;
+        const iframe = tasks[idx];
+        if (!iframe.src){
+          let settled = false;
+          const onDone = (success)=>{
+            if(settled) return; settled = true;
+            iframe.removeEventListener('load', onLoad);
+            iframe.removeEventListener('error', onError);
+            clearTimeout(timeout);
+            idx++;
+            setTimeout(loadNext, 400);
+          };
+          const onLoad = ()=> onDone(true);
+          const onError = ()=> onDone(false);
+          const timeout = setTimeout(()=> onDone(false), 6000); // give 6s then continue
+          iframe.addEventListener('load', onLoad, { once: true });
+          iframe.addEventListener('error', onError, { once: true });
+          iframe.src = iframe.dataset.src;
+        } else {
+          idx++;
+          loadNext();
+        }
+      }
+
+      loadNext();
+    }
+
+
+
+
+    function setupSliders(){
+    document.querySelectorAll('.project').forEach(project=>{
+      const slides = Array.from(project.querySelectorAll('.slide'));
+      const counter = project.querySelector('.counter');
+      const prev = project.querySelector('.prev');
+      const next = project.querySelector('.next');
+
+      if (!slides.length || !prev || !next || !counter) return; // <-- skip if not a slider
+
+      let i = 0;
+      function render(){
+        slides.forEach((s,idx)=>s.classList.toggle('active', idx === i));
+        counter.textContent = `${i+1} / ${slides.length}`;
+        prev.disabled = (i === 0);
+        next.disabled = (i === slides.length-1);
+      }
+      prev.onclick = ()=>{ if(i > 0){ i--; render(); }};
+      next.onclick = ()=>{ if(i < slides.length-1){ i++; render(); }};
+      render();
+    });
+  }
+
+
+    window.addEventListener('load',()=>{
+      const splash=document.getElementById('splash');
+      const veil=document.getElementById('veil');
+      const topbar=document.getElementById('topbar');
+      const stage=document.getElementById('stage');
+
+      // End splash at 4s
+      setTimeout(()=>{
+        splash.classList.add('fade-out');
+        setTimeout(()=>{
+          splash.remove();
+          veil.classList.add('hidden');
+          setTimeout(()=>{
+            veil.remove();
+            topbar.style.opacity='1';
+            stage.style.opacity='1';
+          },600);
+        },800);
+      },4000);
+
+  // loading line controlled by CSS timing (appears ~2.5s)
+
+  // preload after splash starts fading
+      setTimeout(roundRobinPreload,700);
+
+  // set initial nav selection
+  const initialRoute = (location.hash||'#home').replace('#','') || 'home';
+  updateNavSelection(initialRoute);
+
+      setupSliders();
+    });
+
+    function updateNavSelection(route){
+      document.querySelectorAll('.top a.btn[data-route]').forEach(a=>{
+        const is = a.dataset.route===route;
+        a.classList.toggle('selected', is);
+        if(is) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current');
+      });
+    }
+
+    document.querySelectorAll('.top a.btn[data-route]').forEach(a=>{
+      a.addEventListener('click',e=>{
+        e.preventDefault();
+        show(a.dataset.route);
+        updateNavSelection(a.dataset.route);
+      });
+    });
+
+    window.addEventListener('hashchange',()=>{
+      const r=(location.hash||'#home').replace('#','');
+  const route = ROUTES.includes(r)?r:'home';
+  show(route);
+  updateNavSelection(route);
+    });
+  </script>
+</body>
+</html>
