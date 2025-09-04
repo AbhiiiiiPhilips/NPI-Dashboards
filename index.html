@@ -211,7 +211,7 @@
             iframe.removeEventListener('error', onError);
             clearTimeout(timeout);
             idx++;
-            setTimeout(loadNext, 400);
+            setTimeout(loadNext, 350);
           };
           const onLoad = ()=> onDone(true);
           const onError = ()=> onDone(false);
@@ -277,7 +277,7 @@
   // loading line controlled by CSS timing (appears ~2.5s)
 
   // preload after splash starts fading
-      setTimeout(roundRobinPreload,700);
+      setTimeout(roundRobinPreload,650);
 
   // set initial nav selection
   const initialRoute = (location.hash||'#home').replace('#','') || 'home';
@@ -312,4 +312,5 @@
 </body>
 
 </html>
+
 
